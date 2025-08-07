@@ -82,11 +82,9 @@ get_f<-function(dat,F_value=10){
 exposue <-  get_f(exp_dat, F_value=0)
 #save(exposue,file="exposue.Rdata")
 load(file="exposue.Rdata")
-##筛选
-###F要大于10
 #write.xlsx(exposue,"expose.xlsx",rowNames=F,colNames=T)
 
-##去除混杂
+##remove confounder
 library(MendelianRandomization)
 
 confounder <- MendelianRandomization::phenoscanner(
