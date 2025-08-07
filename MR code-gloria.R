@@ -8,7 +8,7 @@ library(ieugwasr)
 get_opengwas_jwt()
 user()
 #rm(list=ls())
-wrdir <- ("/Users/liutiange/Documents/文章修改/孟德尔随机化/近视与眼病")
+wrdir <- ("/Users/name/Documents/myopiaandoculardis")
 setwd(wrdir)
 #ukb-b-6353
 install.packages("openxlsx")
@@ -18,18 +18,18 @@ library(TwoSampleMR)
 #install.packages ("MRInstruments")
 library(MRInstruments)
 library(ggplot2)
-###两个样本来自相同人群
-##读取数据（获取工具变量及工具变量筛选）
+###Two samples from the same population
+##Read data (obtain instrumental variables and filter instrumental variables)
 ##默认P<5E-8,r2=0.001，kb=10000
 myopia<-extract_instruments(outcomes='ukb-b-6353', clump=T)
 
 #save(myopia,file="myopia_exposure.Rdata")
 load(file="myopia_exposure.Rdata")
-#去掉不含EAF的
+#Remove those without EAF
 #library(tidyverse)
 #data <- drop_na(data,eaf.exposure)
 
-###计算MAF
+###calculate MAF
 eaf2maf <- function(eaf = NULL) {
   if (any(is.infinite(eaf))) {
     warning("The 'eaf' vector contains infinite values. 
@@ -45,27 +45,27 @@ eaf2maf <- function(eaf = NULL) {
     return(maf)
   }
 }
-# 先加载上面的Function，在进行转化
+
 exp_dat=TwoSampleMR::extract_instruments(outcomes = "ukb-b-6353")
 exp_dat$maf <- eaf2maf(eaf=exp_dat$eaf.exposure)
 exp_dat$maf
 
 #write.xlsx(exp_dat,"exp_dat.xlsx",rowNames=F,colNames=T)
 
-####计算R2和F统计量
+####calculate R2 and F
 get_f<-function(dat,F_value=10){
   log<-is.na(dat$eaf.exposure)
   log<-unique(log)
   if(length(log)==1)
   {if(log==TRUE){
-    print("数据不包含eaf，无法计算F统计量")
+    print("The data does not include eaf, so the F-statistic cannot be calculated")
     return(dat)}
   }
-  if(is.null(dat$beta.exposure[1])==T || is.na(dat$beta.exposure[1])==T){print("数据不包含beta，无法计算F统计量")
+  if(is.null(dat$beta.exposure[1])==T || is.na(dat$beta.exposure[1])==T){print("The data does not include beta, so the F-statistic cannot be calculated")
     return(dat)}
-  if(is.null(dat$se.exposure[1])==T || is.na(dat$se.exposure[1])==T){print("数据不包含se，无法计算F统计量")
+  if(is.null(dat$se.exposure[1])==T || is.na(dat$se.exposure[1])==T){print("The data does not include se, so the F-statistic cannot be calculated")
     return(dat)}
-  if(is.null(dat$samplesize.exposure[1])==T || is.na(dat$samplesize.exposure[1])==T){print("数据不包含samplesize(样本量)，无法计算F统计量")
+  if(is.null(dat$samplesize.exposure[1])==T || is.na(dat$samplesize.exposure[1])==T){print("The data does not include sample size, so the F-statistic cannot be calculated")
     return(dat)}
   
   
@@ -98,7 +98,7 @@ confounder <- MendelianRandomization::phenoscanner(
   build = 37)
 
 conf <- as.data.frame(cbind(confounder[["results"]][["snp"]],confounder[["results"]][["trait"]]))
-conf$V2 <- tolower(conf$V2)##小写转化
+conf$V2 <- tolower(conf$V2)##
 conf_count <- dplyr::count(conf,V2,sort =TRUE)
 
 c <-conf[conf$V2%in%c("basal metabolic rate","age-related macular degeneration","age of onset of myopia"),]
@@ -111,10 +111,10 @@ exposue_conf <- myopia[myopia$SNP%in%con2$V1,]
 load(file="exposue_conf.Rdata")
 #write.xlsx(exposue_conf,"expose2.xlsx",rowNames=F,colNames=T)
 
-##进行筛选(F9)(89个)
+
 outcome2 <- extract_outcome_data(
   snps = exposue_conf$SNP,
-  ##结局----
+  ##outcome----
   outcomes =c("finn-b-H7_CORNEALDYSTROPHY",
               "finn-b-H7_CORNEALNAS",
               "finn-b-H7_CORNEALOTH",
@@ -216,23 +216,23 @@ mydata2 <- harmonise_data(
   action= 2
 )
 res <- mr(mydata2)
-##共89个结局
+
 #save(res,file="res.Rdata")
 load(file="res.Rdata")
-###附件2
+
 ##write.xlsx(res,"89.xlsx",rowNames=F,colNames=T)
 
 OR_89<-generate_odds_ratios(res)
 res_scr_89 <- res[res$method=="Inverse variance weighted",]
-#OR值计算
+
 OR_scr<-generate_odds_ratios(res_scr_89)
 
-##根据P值筛选
+##screen through P value
 p_scr <- OR_scr[OR_scr$pval<0.05,]
 
-####### FDR校正
-res_scr_89$q <- p.adjust((res_scr_89$pval),  # P值列表
-  method ="BH")     # FDR校正的方法
+####### FDR
+res_scr_89$q <- p.adjust((res_scr_89$pval),  
+  method ="BH")     # FDR adjust
 
 table <- merge(res_scr_89[,c(2,10)],res,by="id.outcome")
 for(i in 1:nrow(table)){
@@ -251,10 +251,10 @@ for(i in 1:nrow(q_scr)){
   }
 method <- method[-c(6:10),]
 
-##write.xlsx(method,"筛选结果qvalue.xlsx",rowNames=F,colNames=T)
-##write.xlsx(res,"孟德尔89结果.xlsx",rowNames=F,colNames=T)
+##write.xlsx(method,"qvalue.xlsx",rowNames=F,colNames=T)
+##write.xlsx(res,"89.xlsx",rowNames=F,colNames=T)
 
-########我们感兴趣的眼病###############
+########Interested###############
 outcome_intere<-extract_outcome_data(
   snps = exposue_conf$SNP,
   outcomes =c("finn-b-H7_VITROTH","finn-b-H7_OPTICDISCOTH","ebi-a-GCST009722","finn-b-H7_CATARACTOTHER","finn-b-H7_GLAUCCLOSEPRIM","finn-b-H7_RETINALDETACHBREAK"),
@@ -287,16 +287,14 @@ plot_radial(racial)
 library(MRPRESSO)
 presso <- mr_presso(BetaOutcome ="beta.outcome", BetaExposure = "beta.exposure", SdOutcome ="se.outcome", SdExposure = "se.exposure", OUTLIERtest = TRUE,DISTORTIONtest = TRUE, data =mydata_intere, NbDistribution = 1000, SignifThreshold = 0.05) 
 
-##异质性检验(主要是检验各个工具变量之间的差异,也可以用MR-presso)
-#这些IV之间存在很强的异质性（Q_pval远小于0.05),这时候我们需要剔除某些outcome的SNP，或者直接使用随机效应模型
-#如果不存在异质性，那就是固定效应模型
-###使用随机效应模型:mr(mydata,method_list=c('mr_ivw_mre'))
+##mr_heterogeneity
+
 het <- mr_heterogeneity(mydata_intere)
 het
 presso <- run_mr_presso(mydata_intere, NbDistribution = 5000)
 
 #mr(mydata,method_list=c('mr_ivw_mre'))
-###计算异质性的I2
+### calculate I2
 library(MendelianRandomization)
 MRInputObject <- MendelianRandomization::mr_input(
   bx = mydata_intere$beta.exposure,
@@ -309,14 +307,14 @@ MRInputObject <- MendelianRandomization::mr_input(
   object = MRInputObject, model = "fixed" )
 
 
-#多效性检验(主要检验多个工具变量是否存在水平多效性，可以理解为是否存在混杂因素)
-#egger_intercept与0进行对比,p>0.05,说明不存在水平多效性。
+#pleiotropy
+#Comparing egger_intercept with 0, p>0.05, There is no horizontal pleiotropy.
 pleio <- mr_pleiotropy_test(mydata_intere)
 pleio
 write.xlsx(het,"het_intere.xlsx",rowNames=F,colNames=T)
 write.xlsx(pleio,"pleio_intere.xlsx",rowNames=F,colNames=T)
-#逐个剔除检验-（leave-one-out）#主要是逐个剔除IV后计算剩下IV的MR结果
-#如果无论去除哪个SNP都不会对结果产生根本影响（所有的线条均在0的一侧），那就是说这个MR结果实际是稳健的。
+#Remove one by one test - (leave one out) # mainly calculates the MR results of the remaining IV after removing IV one by one
+#If removing any SNP does not fundamentally affect the results (all lines are on the side of 0), then this MR result is actually robust.
 
 pdata <- mydata_intere
 pdata$exposure <- "myopia"
